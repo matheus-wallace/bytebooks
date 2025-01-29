@@ -2,19 +2,30 @@ import { useDispatch, useSelector } from 'react-redux';
 import Header from '../../components/Header';
 import PageContent from '../../components/PageContent';
 import PageSection from '../../components/PageSection';
-import React, { lazy, Suspense, useEffect } from 'react';
-import { fetchBooks, filterItems } from '../../store/reducers/books';
+import React, { Suspense, lazy, useEffect, useMemo } from 'react';
+import { fetchBooks } from '../../store/reducers/books';
 import { AppDispatch, RootState } from '../../store/store';
 import { Footer } from '../../components/Footer';
 import { resolvePromise } from '../../utils';
+
 const BooksList = lazy(() => resolvePromise(import('../../components/BooksList')));
 
 const Catalog: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [filterInput, setFilterInput] = React.useState('');
-  const { books, filteredBooks } = useSelector((state: RootState) => state.books);
+  const { books } = useSelector((state: RootState) => state.books);
 
-  const showingItems = filteredBooks && filteredBooks.length > 0 ? filteredBooks : books;
+  const CatalogHeader = useMemo(
+    () => (
+      <Header>
+        <img alt="ByteBooks Logo" src="./logo.png" height={70} />
+      </Header>
+    ),
+    [],
+  );
+
+  const showingItems =
+    filterInput.length > 0 ? books.filter((book) => book.title.toLowerCase().includes(filterInput)) : books;
 
   useEffect(() => {
     dispatch(fetchBooks());
@@ -22,27 +33,12 @@ const Catalog: React.FC = () => {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilterInput(e.target.value);
-    dispatch(filterItems(e.target.value));
   };
 
-  // function onRender(id, phase, actualDuration, baseDuration, startTime, commitTime) {
-  //   console.log({
-  //     id,
-  //     phase,
-  //     actualDuration,
-  //     baseDuration,
-  //     startTime,
-  //     commitTime,
-  //   });
-  // }
-
   return (
-    // <Profiler id="catalog" onRender={onRender}>
     <React.Fragment>
       <React.Fragment>
-        <Header>
-          <img alt="ByteBooks Logo" src="./logo.png" height={70} />
-        </Header>
+        {CatalogHeader}
         <PageSection>
           <h2 className="text-4xl text-white font-bold">Já sabe por onde começar?</h2>
           <h3 className="text-base text-white font-bold mt-4">
@@ -58,15 +54,15 @@ const Catalog: React.FC = () => {
           </div>
         </PageSection>
         <React.Fragment>
-          {!filteredBooks?.length && filterInput.length > 0 ? (
+          {!showingItems.length && filterInput.length > 0 ? (
             <div className="flex-1 items-center mt-4">
               <h2 className="text-center text-[#002F52] text-[32px]">Oops! Não encontramos nenhum resultado.</h2>
-              <img src="/not_found.png" alt="sem resultado" className="w-1/2 max-w-[500px] mx-auto mt-4" />
+              <img src="/not_found.webp" alt="sem resultado" className="w-1/2 max-w-[500px] mx-auto mt-4" />
             </div>
           ) : (
             <PageContent>
               <div className="flex flex-wrap justify-center container items-start">
-                <Suspense fallback={<img alt="loading" src="/loading.gif" />}>
+                <Suspense fallback={<img src="/loading.gif" alt="carregando" width={200} />}>
                   <BooksList items={showingItems} />
                 </Suspense>
               </div>
@@ -76,7 +72,6 @@ const Catalog: React.FC = () => {
         </React.Fragment>
       </React.Fragment>
     </React.Fragment>
-    // </Profiler>
   );
 };
 
